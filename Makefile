@@ -7,8 +7,10 @@ FPC      ?= fpc
 FPCFLAGS ?= -Mobjfpc -Sh -O2
 
 # Tools are listed by source base name; each builds to an executable of the
-# same name. The shared unit and its test live alongside them.
-TOOLS = mgnt-pkg mgnt-get mgnt-orphan mgnt-fs-orphan
+# same name. The shared unit and its test live alongside them. mgnt-get,
+# mgnt-attract and mgnt-repel share magnetget.pas.
+TOOLS = mgnt-pkg mgnt-get mgnt-attract mgnt-repel mgnt-orphan mgnt-fs-orphan
+FRONTENDS = mgnt-get mgnt-attract mgnt-repel
 
 .PHONY: all test clean install uninstall help
 
@@ -18,8 +20,15 @@ all: $(TOOLS)
 portage.ppu: portage.pas
 	$(FPC) $(FPCFLAGS) $<
 
-# Every tool depends on the shared unit, so a change there rebuilds them all.
-$(TOOLS): %: %.pas portage.ppu
+magnetget.ppu: magnetget.pas portage.ppu
+	$(FPC) $(FPCFLAGS) $<
+
+# The front ends share the install and remove implementation.
+$(FRONTENDS): %: %.pas magnetget.ppu
+	$(FPC) $(FPCFLAGS) $<
+
+# The query tools only use the vardb unit.
+$(filter-out $(FRONTENDS),$(TOOLS)): %: %.pas portage.ppu
 	$(FPC) $(FPCFLAGS) $<
 
 # Synthetic + live-vardb regression tests for the shared unit.

@@ -6,9 +6,11 @@ Small Gentoo package and filesystem tools written in Free Pascal.
 
 The common core is `portage.pas`, a read-only parser for the installed Portage
 vardb (`/var/db/pkg`). `mgnt-pkg`, `mgnt-orphan`, and `mgnt-fs-orphan` read that
-database directly and do not invoke Portage commands. `mgnt-get` also uses the
-vardb for planning, then invokes `emerge` directly with an argument vector to
-perform installs, syncs, and unmerges; no command is passed through a shell.
+database directly and do not invoke Portage commands. `mgnt-attract` installs
+through `emerge`, and `mgnt-repel` removes packages with the native solver.
+`mgnt-get` is the legacy combined front end; it also uses the vardb for
+planning, then invokes `emerge` directly with an argument vector. No command is
+passed through a shell.
 
 The tools are intentionally simple. They inspect what is *installed now*; they
 are not a replacement for Portage's dependency solver.
@@ -20,7 +22,9 @@ are not a replacement for Portage's dependency solver.
 | `portage.pas` | shared read-only vardb parser and ownership index |
 | `tportage.pas` | synthetic/live regression tests for `portage.pas` |
 | `mgnt-pkg` | query installed packages, files, reverse dependencies and USE flags |
-| `mgnt-get` | apt-get-like front end; notably recursive reverse-dependency removal |
+| `mgnt-attract` | install packages through `emerge` |
+| `mgnt-repel` | remove packages with the native recursive solver |
+| `mgnt-get` | legacy combined front end |
 | `mgnt-orphan` | find installed packages that nothing else depends on |
 | `mgnt-fs-orphan` | find filesystem objects that no installed package owns |
 
@@ -113,9 +117,10 @@ files and may over-approximate rather than hide a possible dependant.
 
 ---
 
-## mgnt-get
+## mgnt-get (legacy)
 
-An apt-get-flavoured front end. The interesting operation is recursive remove.
+The legacy apt-get-flavoured front end. The focused commands are
+`mgnt-attract` for installs and `mgnt-repel` for removals.
 
 ```text
 mgnt-get update
@@ -126,19 +131,21 @@ mgnt-get remove  <package>... [-n|--dry-run] [-y|--yes]
 mgnt-get repel   <package>... [-n|--dry-run] [-y|--yes]
 ```
 
-`attract` and `repel` are aliases for `install` and `remove`, matching the
-magnet name.
+`mgnt-get attract` and `mgnt-get repel` remain as aliases for `install` and
+`remove`. `mgnt-attract` and `mgnt-repel` are the focused binaries.
 
 Examples:
 
 ```sh
 mgnt-get update
 mgnt-get install dev-lang/fpc
-mgnt-get attract dev-lang/fpc
 mgnt-get install -d dev-lang/fpc
 mgnt-get remove -n dev-python/electrum-aionostr
-mgnt-get repel -n dev-python/electrum-aionostr
 mgnt-get remove -y dev-python/electrum-aionostr
+
+mgnt-attract dev-lang/fpc
+mgnt-attract -d dev-lang/fpc
+mgnt-repel -n dev-python/electrum-aionostr
 ```
 
 `install` calls `emerge` normally. `-d` uses `emerge -f` and only fetches the
@@ -148,14 +155,15 @@ binary-package policy/options say otherwise.
 
 ### Recursive remove
 
-`remove` finds every installed package that depends on the requested package,
-recurses through that reverse dependency graph, prints dependants first, asks
-for confirmation, then unmerges exact installed CPVs with `emerge --unmerge`.
+`remove` and `mgnt-repel` find every installed package that depends on the
+requested package, recurse through that reverse dependency graph, print
+dependants first, ask for confirmation, then unmerge exact installed CPVs with
+`emerge --unmerge`.
 
 Use `-n` first when the graph is non-trivial:
 
 ```sh
-mgnt-get remove -n dev-lang/fpc
+mgnt-repel -n dev-lang/fpc
 ```
 
 Important: this is intentionally more conservative than a full Portage solver.
@@ -166,9 +174,9 @@ not solved. Consequently recursive remove can schedule more packages than are
 strictly necessary. It is a "what declares a dependency on this?" operation,
 not `emerge --depclean`.
 
-`mgnt-get` looks for `/usr/bin/emerge` first and falls back to `$PATH`. If an
-`emerge` invocation fails, `mgnt-get` stops immediately instead of continuing a
-partial recursive removal.
+The install commands look for `/usr/bin/emerge` first and fall back to `$PATH`.
+If an `emerge` invocation fails, the command stops immediately instead of
+continuing a partial recursive removal.
 
 ---
 
@@ -358,7 +366,8 @@ complete implementation of PMS/Portage dependency resolution.
 ## Exit status
 
 The query tools use conventional nonzero exits for invalid arguments and failed
-lookups. `mgnt-get` propagates a failed `emerge` status and stops immediately.
+lookups. The mutation commands propagate a failed `emerge` status and stop
+immediately.
 
 ## Safety model
 
@@ -367,8 +376,9 @@ The project separates three kinds of operation:
 * **query** — `mgnt-pkg`, `mgnt-orphan`, normal `mgnt-fs-orphan`;
 * **recommendation** — `mgnt-fs-orphan -r` emits a narrow stale-file candidate
   set but still does not delete;
-* **mutation** — only `mgnt-get` invokes Portage to change installed packages;
-  filesystem deletion remains an explicit operator action.
+* **mutation** — `mgnt-attract`, `mgnt-repel`, and `mgnt-get` invoke Portage to
+  change installed packages; filesystem deletion remains an explicit operator
+  action.
 
 That separation is deliberate: the vardb is useful for recovery and forensic
 work precisely because reading it should not silently change the system.
