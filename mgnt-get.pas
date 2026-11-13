@@ -18,7 +18,7 @@ var
 
 procedure Usage;
 begin
-  WriteLn('mgnt-get 1.3.2 - Gentoo package front end + native installed-state solver');
+  WriteLn('mgnt-get 1.0 - Gentoo package front end + native installed-state solver');
   WriteLn;
   WriteLn('usage:');
   WriteLn('  mgnt-get update                         sync repositories (emerge backend)');

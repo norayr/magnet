@@ -24,7 +24,7 @@ var
 
 procedure Usage;
 begin
-  WriteLn('mgnt-pkg ', '1.1', ' - query the installed Portage database');
+  WriteLn('mgnt-pkg ', '1.0', ' - query the installed Portage database');
   WriteLn;
   WriteLn('usage: mgnt-pkg <command> [argument]');
   WriteLn;

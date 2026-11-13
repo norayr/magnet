@@ -793,7 +793,7 @@ end;
 
 procedure Usage;
 begin
-  WriteLn('mgnt-fs-orphan 1.3 - report files that no installed package owns');
+  WriteLn('mgnt-fs-orphan 1.0 - report files that no installed package owns');
   WriteLn;
   WriteLn('usage: mgnt-fs-orphan [options] [directory...]');
   WriteLn;

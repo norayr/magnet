@@ -1,6 +1,8 @@
 # magnet
 
-Small Gentoo package/database tools written in Free Pascal.
+Version 1.0.
+
+Small Gentoo package and filesystem tools written in Free Pascal.
 
 The common core is `portage.pas`, a read-only parser for the installed Portage
 vardb (`/var/db/pkg`). `mgnt-pkg`, `mgnt-orphan`, and `mgnt-fs-orphan` read that

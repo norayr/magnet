@@ -29,7 +29,7 @@ type
 
 procedure Usage;
 begin
-  WriteLn('mgnt-orphan 1.1 - find installed packages that nothing depends on');
+  WriteLn('mgnt-orphan 1.0 - find installed packages that nothing depends on');
   WriteLn;
   WriteLn('usage: mgnt-orphan [options]');
   WriteLn;
