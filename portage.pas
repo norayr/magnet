@@ -1,12 +1,12 @@
 unit portage;
 // Shared library for working with a Portage vardb (/var/db/pkg).
 //
-// Consumers: gntpkg, gnt-get, gntorphan, gntfsorphan.
+// Consumers: mgnt-pkg, mgnt-get, mgnt-orphan, mgnt-fs-orphan.
 //
 // Design notes:
 //  * Nothing in here prints to stdout. Every entry point returns data so
-//    callers decide on formatting. This is what lets gnt-get query the db
-//    directly instead of shelling out to gntpkg.
+//    callers decide on formatting. This is what lets mgnt-get query the db
+//    directly instead of shelling out to mgnt-pkg.
 //  * The package collection is small (a few thousand entries) so it is
 //    iterated linearly. Only the file index (hundreds of thousands of
 //    paths) gets a sorted lookup table.
@@ -23,7 +23,7 @@ const
   // Portage does not export an environment variable for the vardb path, so we
   // provide our own. This also makes it possible to point the tools at a fake
   // tree for testing.
-  DBEnvVar = 'GNTPKG_DB_PATH';
+  DBEnvVar = 'MGNT_DB_PATH';
   DefaultDBPath = '/var/db/pkg';
 
 type
@@ -146,7 +146,7 @@ type
 
 // ---------------------------------------------------------------- helpers ---
 
-// The active vardb path: $GNTPKG_DB_PATH if set, otherwise /var/db/pkg.
+// The active vardb path: $MGNT_DB_PATH if set, otherwise /var/db/pkg.
 function ActiveDBPath: string;
 
 // Merged-usr normalisation. The alias table is discovered from the filesystem
@@ -629,16 +629,16 @@ begin
   Result := ParseAtomOp(AAtom, op, ACat, APkg, AVersion, ASlot);
 end;
 
-// True when ADep is a blocking atom. Portage has three spellings: "!" is a weak
-// blocker and "!!" a strong blocker. Neither expresses a dependency,
-// so blockers must not become reverse dependencies.
+// True when ADep does not express a dependency. Portage spells weak blockers
+// as "!" and strong blockers as "!!"; a leading "?" is not a dependency atom
+// either, so it must not become a reverse dependency.
 function IsBlockerDep(const ADep: string): boolean;
 var
   i: integer;
 begin
   i := 1;
   while (i <= Length(ADep)) and (ADep[i] in [' ', #9]) do Inc(i);
-  Result := (i <= Length(ADep)) and (ADep[i] = '!');
+  Result := (i <= Length(ADep)) and (ADep[i] in ['!', '?']);
 end;
 
 function NormalizeDep(const ADep: string): string;
@@ -647,7 +647,8 @@ var
 begin
   Result := '';
   // A blocker ("!cat/pkg" or "!!cat/pkg") declares that the package
-  // must *not* be installed. Treating it as a dependency would list every
+  // must *not* be installed. A leading "?" is not a dependency atom either.
+  // Treating either form as a dependency would list every
   // package that forbids something as depending on it, which is the opposite
   // of the truth - e.g. net-tools has "!sys-apps/coreutils[hostname]".
   if IsBlockerDep(ADep) then exit;
@@ -2019,7 +2020,7 @@ begin
       end;
     end;
 
-    // gnt-get remove asks with an unversioned installed atom. Keep versioned
+    // mgnt-get remove asks with an unversioned installed atom. Keep versioned
     // API queries conservative until full PMS range evaluation is implemented.
     if found and (ver <> '') then
       found := MatchesVersion(p, op, cat, pkg, ver);

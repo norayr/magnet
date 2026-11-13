@@ -73,7 +73,7 @@ end;
 
 // A tiny fake vardb that exercises the parser and the lookup helpers.
 const
-  TestRoot = '/tmp/gnt-portage-test';
+  TestRoot = '/tmp/mgnt-portage-test';
 
 procedure Pkg(const Cat, PF, Contents, Depend, RDepend, Use, IUse, Slot: string);
 var

@@ -1,6 +1,6 @@
-// gntfsorphan - files on disk that no installed package owns.
+// mgnt-fs-orphan - files on disk that no installed package owns.
 //
-// This is the file-level companion to gntorphan. It walks the library
+// This is the file-level companion to mgnt-orphan. It walks the library
 // directories, compares every file against the ownership index built from
 // CONTENTS, and reports the leftovers - by default only ELF objects, because
 // those are the ones that matter when a package is unmerged: a shared library
@@ -11,10 +11,10 @@
 // know about is a good way to break a system, so that decision stays with the
 // operator.
 //
-//   gntfsorphan                    orphaned ELF objects under the lib dirs
-//   gntfsorphan -a                 every unowned file, not just ELF
-//   gntfsorphan /opt               scan a specific root
-//   gntfsorphan -s                 summary only
+//   mgnt-fs-orphan                    orphaned ELF objects under the lib dirs
+//   mgnt-fs-orphan -a                 every unowned file, not just ELF
+//   mgnt-fs-orphan /opt               scan a specific root
+//   mgnt-fs-orphan -s                 summary only
 //
 // For each ELF object it prints which installed packages reference its SONAME in
 // DT_NEEDED.  For shared libraries it also resolves the SONAME through the usual
@@ -24,7 +24,7 @@
 // check.  "[used]" means a running process currently maps the exact file according
 // to /proc/<pid>/maps.
 
-program gntfsorphan;
+program mgntfsorphan;
 
 {$mode objfpc}{$H+}
 
@@ -424,7 +424,7 @@ begin
 end;
 
 // A package is orphaned when no *other* package depends on it (same rule as
-// gntorphan). The bare cat/pkg atoms in DependAtoms are exactly the names that
+// mgnt-orphan). The bare cat/pkg atoms in DependAtoms are exactly the names that
 // count as "depended on".
 procedure BuildDependedOn;
 var
@@ -793,9 +793,9 @@ end;
 
 procedure Usage;
 begin
-  WriteLn('gntfsorphan 1.3 - report files that no installed package owns');
+  WriteLn('mgnt-fs-orphan 1.3 - report files that no installed package owns');
   WriteLn;
-  WriteLn('usage: gntfsorphan [options] [directory...]');
+  WriteLn('usage: mgnt-fs-orphan [options] [directory...]');
   WriteLn;
   WriteLn('  default roots: /usr/lib /usr/lib64 /usr/libexec');
   WriteLn('  -a, --all             report every unowned file and symlink, not just ELF');
@@ -842,7 +842,7 @@ begin
         RemoveOnly := True
       else if (ParamStr(i) <> '') and (ParamStr(i)[1] = '-') then
       begin
-        WriteLn(StdErr, 'gntfsorphan: unknown option ''', ParamStr(i), '''');
+        WriteLn(StdErr, 'mgnt-fs-orphan: unknown option ''', ParamStr(i), '''');
         Usage;
         Halt(2);
       end

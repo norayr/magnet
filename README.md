@@ -1,10 +1,10 @@
-# gnt
+# magnet
 
 Small Gentoo package/database tools written in Free Pascal.
 
 The common core is `portage.pas`, a read-only parser for the installed Portage
-vardb (`/var/db/pkg`). `gntpkg`, `gntorphan`, and `gntfsorphan` read that
-database directly and do not invoke Portage commands. `gnt-get` also uses the
+vardb (`/var/db/pkg`). `mgnt-pkg`, `mgnt-orphan`, and `mgnt-fs-orphan` read that
+database directly and do not invoke Portage commands. `mgnt-get` also uses the
 vardb for planning, then invokes `emerge` directly with an argument vector to
 perform installs, syncs, and unmerges; no command is passed through a shell.
 
@@ -17,10 +17,10 @@ are not a replacement for Portage's dependency solver.
 |---|---|
 | `portage.pas` | shared read-only vardb parser and ownership index |
 | `tportage.pas` | synthetic/live regression tests for `portage.pas` |
-| `gntpkg` | query installed packages, files, reverse dependencies and USE flags |
-| `gnt-get` | apt-get-like front end; notably recursive reverse-dependency removal |
-| `gntorphan` | find installed packages that nothing else depends on |
-| `gntfsorphan` | find filesystem objects that no installed package owns |
+| `mgnt-pkg` | query installed packages, files, reverse dependencies and USE flags |
+| `mgnt-get` | apt-get-like front end; notably recursive reverse-dependency removal |
+| `mgnt-orphan` | find installed packages that nothing else depends on |
+| `mgnt-fs-orphan` | find filesystem objects that no installed package owns |
 
 ## Build
 
@@ -32,8 +32,8 @@ make test
 or compile an individual program directly, for example:
 
 ```sh
-fpc gntpkg.pas
-fpc gnt-get.pas
+fpc mgnt-pkg.pas
+fpc mgnt-get.pas
 ```
 
 Free Pascal 3.2.2 or newer is sufficient. No third-party Pascal units are
@@ -47,42 +47,42 @@ By default the tools read:
 /var/db/pkg
 ```
 
-Set `GNTPKG_DB_PATH` to an absolute path to use another vardb:
+Set `MGNT_DB_PATH` to an absolute path to use another vardb:
 
 ```sh
-GNTPKG_DB_PATH=/tmp/fake-vardb ./gntpkg list
+MGNT_DB_PATH=/tmp/fake-vardb ./mgnt-pkg list
 ```
 
-This variable belongs to `gnt`; Portage itself does not define it. It is useful
+This variable belongs to `mgnt`; Portage itself does not define it. It is useful
 for tests and recovery work.
 
 ---
 
-## gntpkg
+## mgnt-pkg
 
 Query the installed vardb.
 
 ```text
-gntpkg list                     list cat/name-version
-gntpkg files  <spec>            list paths owned by one installed package
-gntpkg belongs <path-or-text>   find the package/file owning a path
-gntpkg depends <atom>           list installed reverse dependencies
-gntpkg hasuse <flag>            list packages enabling/declaring a USE flag
-gntpkg uses   <spec>            list enabled USE flags for a package
-gntpkg help
+mgnt-pkg list                     list cat/name-version
+mgnt-pkg files  <spec>            list paths owned by one installed package
+mgnt-pkg belongs <path-or-text>   find the package/file owning a path
+mgnt-pkg depends <atom>           list installed reverse dependencies
+mgnt-pkg hasuse <flag>            list packages enabling/declaring a USE flag
+mgnt-pkg uses   <spec>            list enabled USE flags for a package
+mgnt-pkg help
 ```
 
 Examples:
 
 ```sh
-gntpkg list
-gntpkg files dev-lang/fpc
-gntpkg belongs /usr/bin/fpc
-gntpkg belongs libQt6Core.so
-gntpkg depends fpc
-gntpkg depends dev-lang/fpc
-gntpkg hasuse wayland
-gntpkg uses dev-qt/qtbase
+mgnt-pkg list
+mgnt-pkg files dev-lang/fpc
+mgnt-pkg belongs /usr/bin/fpc
+mgnt-pkg belongs libQt6Core.so
+mgnt-pkg depends fpc
+mgnt-pkg depends dev-lang/fpc
+mgnt-pkg hasuse wayland
+mgnt-pkg uses dev-qt/qtbase
 ```
 
 `<spec>` can be a bare package name, `cat/pkg`, or an exact installed atom such
@@ -111,25 +111,32 @@ files and may over-approximate rather than hide a possible dependant.
 
 ---
 
-## gnt-get
+## mgnt-get
 
 An apt-get-flavoured front end. The interesting operation is recursive remove.
 
 ```text
-gnt-get update
-gnt-get install <package>... [-d|--download-only]
-gnt-get source  <package>... [-d|--download-only]
-gnt-get remove  <package>... [-n|--dry-run] [-y|--yes]
+mgnt-get update
+mgnt-get install <package>... [-d|--download-only]
+mgnt-get attract <package>... [-d|--download-only]
+mgnt-get source  <package>... [-d|--download-only]
+mgnt-get remove  <package>... [-n|--dry-run] [-y|--yes]
+mgnt-get repel   <package>... [-n|--dry-run] [-y|--yes]
 ```
+
+`attract` and `repel` are aliases for `install` and `remove`, matching the
+magnet name.
 
 Examples:
 
 ```sh
-gnt-get update
-gnt-get install dev-lang/fpc
-gnt-get install -d dev-lang/fpc
-gnt-get remove -n dev-python/electrum-aionostr
-gnt-get remove -y dev-python/electrum-aionostr
+mgnt-get update
+mgnt-get install dev-lang/fpc
+mgnt-get attract dev-lang/fpc
+mgnt-get install -d dev-lang/fpc
+mgnt-get remove -n dev-python/electrum-aionostr
+mgnt-get repel -n dev-python/electrum-aionostr
+mgnt-get remove -y dev-python/electrum-aionostr
 ```
 
 `install` calls `emerge` normally. `-d` uses `emerge -f` and only fetches the
@@ -146,7 +153,7 @@ for confirmation, then unmerges exact installed CPVs with `emerge --unmerge`.
 Use `-n` first when the graph is non-trivial:
 
 ```sh
-gnt-get remove -n dev-lang/fpc
+mgnt-get remove -n dev-lang/fpc
 ```
 
 Important: this is intentionally more conservative than a full Portage solver.
@@ -157,53 +164,53 @@ not solved. Consequently recursive remove can schedule more packages than are
 strictly necessary. It is a "what declares a dependency on this?" operation,
 not `emerge --depclean`.
 
-`gnt-get` looks for `/usr/bin/emerge` first and falls back to `$PATH`. If an
-`emerge` invocation fails, `gnt-get` stops immediately instead of continuing a
+`mgnt-get` looks for `/usr/bin/emerge` first and falls back to `$PATH`. If an
+`emerge` invocation fails, `mgnt-get` stops immediately instead of continuing a
 partial recursive removal.
 
 ---
 
-## gntorphan
+## mgnt-orphan
 
 Find installed packages that have no reverse dependency in the vardb graph.
 
 ```text
-gntorphan                    library-like package names only (contains "lib")
-gntorphan -a                 consider every installed package
-gntorphan -c dev-libs        restrict to one category
-gntorphan -s                 summary only
+mgnt-orphan                    library-like package names only (contains "lib")
+mgnt-orphan -a                 consider every installed package
+mgnt-orphan -c dev-libs        restrict to one category
+mgnt-orphan -s                 summary only
 ```
 
 Example:
 
 ```sh
-gntorphan -a
-gntorphan -a -c dev-python
-gntorphan -s
+mgnt-orphan -a
+mgnt-orphan -a -c dev-python
+mgnt-orphan -s
 ```
 
 A self-dependency does not prevent a package from being reported.
 
-An **orphan is not automatically removable**. `gntorphan` does not read the
+An **orphan is not automatically removable**. `mgnt-orphan` does not read the
 world file, profile/system sets, preserved-libs state, or Portage's complete
 solver state. Top-level packages that you intentionally installed are expected
 to be graph leaves. Treat this command as a query, not as `depclean`.
 
 ---
 
-## gntfsorphan
+## mgnt-fs-orphan
 
 Find filesystem objects under library/program trees that are not claimed by any
 installed package's `CONTENTS` file.
 
 ```text
-gntfsorphan                  unowned ELF objects under the default roots
-gntfsorphan -a               every unowned file and symlink
-gntfsorphan -r               conservative stale-library removal candidates
-gntfsorphan -s               summary only
-gntfsorphan -n               skip DT_NEEDED consumer indexing
-gntfsorphan -0               NUL-separated path output
-gntfsorphan /opt /usr/local  scan explicit roots
+mgnt-fs-orphan                  unowned ELF objects under the default roots
+mgnt-fs-orphan -a               every unowned file and symlink
+mgnt-fs-orphan -r               conservative stale-library removal candidates
+mgnt-fs-orphan -s               summary only
+mgnt-fs-orphan -n               skip DT_NEEDED consumer indexing
+mgnt-fs-orphan -0               NUL-separated path output
+mgnt-fs-orphan /opt /usr/local  scan explicit roots
 ```
 
 Default roots:
@@ -220,7 +227,7 @@ tree.
 
 ### Normal report
 
-For an unowned ELF object, `gntfsorphan` reads `DT_SONAME` and `DT_NEEDED` and
+For an unowned ELF object, `mgnt-fs-orphan` reads `DT_SONAME` and `DT_NEEDED` and
 may print lines such as:
 
 ```text
@@ -268,23 +275,23 @@ following are true:
 Preview it first:
 
 ```sh
-gntfsorphan -r
+mgnt-fs-orphan -r
 ```
 
 Summary only:
 
 ```sh
-gntfsorphan -r -s
+mgnt-fs-orphan -r -s
 ```
 
 If the list has been reviewed, NUL-safe deletion can be done explicitly by the
 operator:
 
 ```sh
-gntfsorphan -r -0 | xargs -0 -r rm -v --
+mgnt-fs-orphan -r -0 | xargs -0 -r rm -v --
 ```
 
-`gntfsorphan` itself **never deletes files**.
+`mgnt-fs-orphan` itself **never deletes files**.
 
 ### `-a` is forensic, not a removal list
 
@@ -300,10 +307,10 @@ Therefore do not treat this as equivalent to `-r`:
 
 ```sh
 # broad investigation
-gntfsorphan -a
+mgnt-fs-orphan -a
 
 # NOT recommended as an automatic cleanup rule:
-# gntfsorphan -a -0 | xargs -0 rm
+# mgnt-fs-orphan -a -0 | xargs -0 rm
 ```
 
 ### Loader-model limits
@@ -349,16 +356,16 @@ complete implementation of PMS/Portage dependency resolution.
 ## Exit status
 
 The query tools use conventional nonzero exits for invalid arguments and failed
-lookups. `gnt-get` propagates a failed `emerge` status and stops immediately.
+lookups. `mgnt-get` propagates a failed `emerge` status and stops immediately.
 
 ## Safety model
 
 The project separates three kinds of operation:
 
-* **query** — `gntpkg`, `gntorphan`, normal `gntfsorphan`;
-* **recommendation** — `gntfsorphan -r` emits a narrow stale-file candidate
+* **query** — `mgnt-pkg`, `mgnt-orphan`, normal `mgnt-fs-orphan`;
+* **recommendation** — `mgnt-fs-orphan -r` emits a narrow stale-file candidate
   set but still does not delete;
-* **mutation** — only `gnt-get` invokes Portage to change installed packages;
+* **mutation** — only `mgnt-get` invokes Portage to change installed packages;
   filesystem deletion remains an explicit operator action.
 
 That separation is deliberate: the vardb is useful for recovery and forensic

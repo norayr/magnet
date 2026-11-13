@@ -1,4 +1,4 @@
-// gntorphan - installed packages that nothing depends on.
+// mgnt-orphan - installed packages that nothing depends on.
 //
 // This is the modern replacement for genorphan. The old tool shelled out to
 // "epkg query" once per installed package and relied on its broken output; here
@@ -8,12 +8,12 @@
 // By default only libraries are considered (the name contains "lib"), which is
 // what genorphan did: the interesting orphans are usually unused libraries.
 //
-//   gntorphan            orphaned libraries
-//   gntorphan -a         orphaned packages of any kind
-//   gntorphan -c dev-libs
-//   gntorphan -s         print a summary line only
+//   mgnt-orphan            orphaned libraries
+//   mgnt-orphan -a         orphaned packages of any kind
+//   mgnt-orphan -c dev-libs
+//   mgnt-orphan -s         print a summary line only
 
-program gntorphan;
+program mgntorphan;
 
 {$mode objfpc}{$H+}
 
@@ -29,9 +29,9 @@ type
 
 procedure Usage;
 begin
-  WriteLn('gntorphan 1.1 - find installed packages that nothing depends on');
+  WriteLn('mgnt-orphan 1.1 - find installed packages that nothing depends on');
   WriteLn;
-  WriteLn('usage: gntorphan [options]');
+  WriteLn('usage: mgnt-orphan [options]');
   WriteLn;
   WriteLn('  -a, --all          consider every package, not just libraries');
   WriteLn('  -c, --category C   restrict to category C');
@@ -93,7 +93,7 @@ begin
       begin
         if i = ParamCount then
         begin
-          WriteLn(StdErr, 'gntorphan: ', ParamStr(i), ' needs a category');
+          WriteLn(StdErr, 'mgnt-orphan: ', ParamStr(i), ' needs a category');
           Halt(2);
         end;
         Inc(i);
@@ -101,7 +101,7 @@ begin
       end
       else
       begin
-        WriteLn(StdErr, 'gntorphan: unknown option ''', ParamStr(i), '''');
+        WriteLn(StdErr, 'mgnt-orphan: unknown option ''', ParamStr(i), '''');
         Usage;
         Halt(2);
       end;

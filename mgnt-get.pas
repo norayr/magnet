@@ -1,4 +1,4 @@
-// gnt-get - an apt-get flavoured front end for Gentoo.
+// mgnt-get - an apt-get flavoured front end for Gentoo.
 //
 // Native installed-state solving lives in portage.pas: USE conditionals,
 // slots, version atoms and ||/^^/?? dependency groups are evaluated directly
@@ -6,7 +6,7 @@
 // emerge as a backend for now; the solver is deliberately being grown
 // independently so it can become a full package-manager core over time.
 
-program gntget;
+program mgntget;
 
 {$mode objfpc}{$H+}
 
@@ -18,22 +18,24 @@ var
 
 procedure Usage;
 begin
-  WriteLn('gnt-get 1.3.2 - Gentoo package front end + native installed-state solver');
+  WriteLn('mgnt-get 1.3.2 - Gentoo package front end + native installed-state solver');
   WriteLn;
   WriteLn('usage:');
-  WriteLn('  gnt-get update                         sync repositories (emerge backend)');
-  WriteLn('  gnt-get install <package>...           install (emerge backend)');
-  WriteLn('  gnt-get source  <package>...           install alias');
-  WriteLn('  gnt-get upgrade                        update @world');
-  WriteLn('  gnt-get full-upgrade                   deep @world update incl. build deps');
-  WriteLn('  gnt-get remove  <package>...           native recursive removal solver');
-  WriteLn('  gnt-get rdepends <package>...          show what would recursively break');
-  WriteLn('  gnt-get check                          verify installed runtime dependency graph');
+  WriteLn('  mgnt-get update                         sync repositories (emerge backend)');
+  WriteLn('  mgnt-get install <package>...           install (emerge backend)');
+  WriteLn('  mgnt-get attract <package>...           alias for install');
+  WriteLn('  mgnt-get source  <package>...           install alias');
+  WriteLn('  mgnt-get upgrade                        update @world');
+  WriteLn('  mgnt-get full-upgrade                   deep @world update incl. build deps');
+  WriteLn('  mgnt-get remove  <package>...           native recursive removal solver');
+  WriteLn('  mgnt-get repel   <package>...           alias for remove');
+  WriteLn('  mgnt-get rdepends <package>...          show what would recursively break');
+  WriteLn('  mgnt-get check                          verify installed runtime dependency graph');
   WriteLn;
   WriteLn('flags:');
-  WriteLn('  -d, --download-only   fetch only (install/source)');
-  WriteLn('  -n, --dry-run         remove: print the plan, change nothing');
-  WriteLn('  -y, --yes             remove: do not ask for confirmation');
+  WriteLn('  -d, --download-only   fetch only (install/attract/source)');
+  WriteLn('  -n, --dry-run         remove/repel: print the plan, change nothing');
+  WriteLn('  -y, --yes             remove/repel: do not ask for confirmation');
 end;
 
 function Lower(const S: string): string;
@@ -59,7 +61,7 @@ begin
   Result := FileSearch('emerge', GetEnvironmentVariable('PATH'));
   if Result = '' then
   begin
-    WriteLn(StdErr, 'gnt-get: cannot find emerge (/usr/bin/emerge or $PATH)');
+    WriteLn(StdErr, 'mgnt-get: cannot find emerge (/usr/bin/emerge or $PATH)');
     Halt(127);
   end;
 end;
@@ -76,13 +78,13 @@ begin
   except
     on E: Exception do
     begin
-      WriteLn(StdErr, 'gnt-get: failed to execute ', exe, ': ', E.Message);
+      WriteLn(StdErr, 'mgnt-get: failed to execute ', exe, ': ', E.Message);
       Halt(127);
     end;
   end;
   if rc <> 0 then
   begin
-    WriteLn(StdErr, 'gnt-get: emerge exited with status ', rc);
+    WriteLn(StdErr, 'mgnt-get: emerge exited with status ', rc);
     Halt(rc);
   end;
 end;
@@ -133,7 +135,7 @@ procedure PrintAmbiguousMatches(const Spec: string; Matches: TObjectList);
 var
   i: integer;
 begin
-  WriteLn(StdErr, 'gnt-get: ambiguous package name: ', Spec);
+  WriteLn(StdErr, 'mgnt-get: ambiguous package name: ', Spec);
   WriteLn(StdErr, 'matches:');
   for i := 0 to Matches.Count - 1 do
     WriteLn(StdErr, '  ', TPkgInfo(Matches[i]).CPV,
@@ -154,7 +156,7 @@ begin
     try
       if l.Count = 0 then
       begin
-        WriteLn(StdErr, 'gnt-get: package not installed: ', Specs[i]);
+        WriteLn(StdErr, 'mgnt-get: package not installed: ', Specs[i]);
         Result.Free;
         Halt(1);
       end;
@@ -316,6 +318,10 @@ begin
     for i := 1 to ParamCount do Args.Add(ParamStr(i));
 
     Cmd := Lower(Args[0]);
+    if Cmd = 'attract' then
+      Cmd := 'install'
+    else if Cmd = 'repel' then
+      Cmd := 'remove';
     DryRun := (Args.IndexOf('-n') >= 0) or
               (Args.IndexOf('--dry-run') >= 0) or
               (Args.IndexOf('--pretend') >= 0);
@@ -362,7 +368,7 @@ begin
     if (Cmd <> 'remove') and (Cmd <> 'rdepends') and
        (Cmd <> 'install') and (Cmd <> 'source') then
     begin
-      WriteLn(StdErr, 'gnt-get: unknown command ''', Args[0], '''');
+      WriteLn(StdErr, 'mgnt-get: unknown command ''', Args[0], '''');
       Usage;
       Halt(2);
     end;
@@ -375,7 +381,7 @@ begin
 
       if PackageArgs.Count = 0 then
       begin
-        WriteLn(StdErr, 'gnt-get: ', Cmd, ' needs at least one package');
+        WriteLn(StdErr, 'mgnt-get: ', Args[0], ' needs at least one package');
         Usage;
         Halt(2);
       end;

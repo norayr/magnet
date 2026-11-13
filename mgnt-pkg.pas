@@ -1,18 +1,18 @@
-// gntpkg - query the installed Portage database (/var/db/pkg).
+// mgnt-pkg - query the installed Portage database (/var/db/pkg).
 //
 // Reads the vardb directly through portage.pas; never shells out to emerge,
 // equery or the old epkg. The old spelling of every command is kept as an
 // alias so existing scripts keep working.
 //
-//   gntpkg list                     cat/name-version of every installed package
-//   gntpkg files  <spec>            paths owned by a package
-//   gntpkg belongs <path-or-text>   packages owning a path
-//   gntpkg depends <atom>           packages depending on an atom
-//   gntpkg hasuse <flag>            packages declaring/enabling a USE flag
-//   gntpkg uses   <spec>            USE flags of a package
-//   gntpkg --help
+//   mgnt-pkg list                     cat/name-version of every installed package
+//   mgnt-pkg files  <spec>            paths owned by a package
+//   mgnt-pkg belongs <path-or-text>   packages owning a path
+//   mgnt-pkg depends <atom>           packages depending on an atom
+//   mgnt-pkg hasuse <flag>            packages declaring/enabling a USE flag
+//   mgnt-pkg uses   <spec>            USE flags of a package
+//   mgnt-pkg --help
 
-program gntpkg;
+program mgntpkg;
 
 {$mode objfpc}{$H+}
 
@@ -24,9 +24,9 @@ var
 
 procedure Usage;
 begin
-  WriteLn('gntpkg ', '1.1', ' - query the installed Portage database');
+  WriteLn('mgnt-pkg ', '1.1', ' - query the installed Portage database');
   WriteLn;
-  WriteLn('usage: gntpkg <command> [argument]');
+  WriteLn('usage: mgnt-pkg <command> [argument]');
   WriteLn;
   WriteLn('  list, -l, all            list installed packages (cat/name-version)');
   WriteLn('  files, -L <spec>         list files owned by a package');
@@ -66,12 +66,12 @@ begin
   try
     if l.Count = 0 then
     begin
-      WriteLn(StdErr, 'gntpkg: no package matches ''', Spec, '''');
+      WriteLn(StdErr, 'mgnt-pkg: no package matches ''', Spec, '''');
       Halt(1);
     end;
     if l.Count > 1 then
     begin
-      WriteLn(StdErr, 'gntpkg: ''', Spec, ''' matches ', l.Count, ' packages:');
+      WriteLn(StdErr, 'mgnt-pkg: ''', Spec, ''' matches ', l.Count, ' packages:');
       for i := 0 to l.Count - 1 do
         WriteLn(StdErr, '  ', TPkgInfo(l.Items[i]).CPV);
       Halt(1);
@@ -97,7 +97,7 @@ var
 begin
   if Needle = '' then
   begin
-    WriteLn(StdErr, 'gntpkg: belongs needs a path or search text');
+    WriteLn(StdErr, 'mgnt-pkg: belongs needs a path or search text');
     Halt(2);
   end;
 
@@ -133,7 +133,7 @@ var
 begin
   if Spec = '' then
   begin
-    WriteLn(StdErr, 'gntpkg: depends needs an atom');
+    WriteLn(StdErr, 'mgnt-pkg: depends needs an atom');
     Halt(2);
   end;
   l := DB.ReverseDepends(Spec);
@@ -155,7 +155,7 @@ var
 begin
   if Flag = '' then
   begin
-    WriteLn(StdErr, 'gntpkg: hasuse needs a flag');
+    WriteLn(StdErr, 'mgnt-pkg: hasuse needs a flag');
     Halt(2);
   end;
   for i := 0 to DB.Count - 1 do
@@ -184,9 +184,9 @@ begin
     if l.Count <> 1 then
     begin
       if l.Count = 0 then
-        WriteLn(StdErr, 'gntpkg: no package matches ''', Spec, '''')
+        WriteLn(StdErr, 'mgnt-pkg: no package matches ''', Spec, '''')
       else
-        WriteLn(StdErr, 'gntpkg: ''', Spec, ''' matches ', l.Count, ' packages');
+        WriteLn(StdErr, 'mgnt-pkg: ''', Spec, ''' matches ', l.Count, ' packages');
       Halt(1);
     end;
     p := TPkgInfo(l.Items[0]);
@@ -241,7 +241,7 @@ begin
       CmdUses(a)
     else
     begin
-      WriteLn(StdErr, 'gntpkg: unknown command ''', Arg(1), '''');
+      WriteLn(StdErr, 'mgnt-pkg: unknown command ''', Arg(1), '''');
       Usage;
       Halt(2);
     end;

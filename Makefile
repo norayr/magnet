@@ -1,4 +1,4 @@
-# gnt - Gentoo package tooling in Free Pascal.
+# magnet - Gentoo package tooling in Free Pascal.
 #
 # Everything reads /var/db/pkg directly through the shared portage.pas unit.
 # There is no runtime dependency on emerge, equery or other any library.
@@ -8,7 +8,7 @@ FPCFLAGS ?= -Mobjfpc -Sh -O2
 
 # Tools are listed by source base name; each builds to an executable of the
 # same name. The shared unit and its test live alongside them.
-TOOLS = gntpkg gnt-get gntorphan gntfsorphan
+TOOLS = mgnt-pkg mgnt-get mgnt-orphan mgnt-fs-orphan
 
 .PHONY: all test clean install uninstall help
 
